@@ -9,6 +9,8 @@
 #define MAX_GENERATOR_THREAD 20
 #define GENERATE_COUNT 10000
 
+int64_t total = 0;  // no lock required
+
 class ValueGenerator : public Loop {
 public:
 
@@ -24,16 +26,14 @@ public:
 
     void update(int dtms) //ticker
     {
-
+      //  std::cout << "ticker inspect total " << total << std::endl;
     }
 };
 
 
-int64_t total = 0;  // no lock required
-
 int main(int argc, char **argv)
 {
-    Looper<int64_t> *sumLooper = new Looper<int64_t>(ThreadCategory::ANY_THREAD, std::make_shared<ValueGenerator>(), 1000);
+    auto sumLooper = std::make_shared<Looper<int64_t>>(ThreadCategory::ANY_THREAD, std::make_shared<ValueGenerator>(), 1000);
     sumLooper->on("add", [](int64_t &v) {
         total += v;
     });
@@ -65,9 +65,7 @@ int main(int argc, char **argv)
 
     sumLooper->ensureStop();
 
-
-    delete sumLooper;
-
+    
     system("pause");
 
     return 0;
