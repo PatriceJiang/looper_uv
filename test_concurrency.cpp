@@ -9,8 +9,6 @@
 #define MAX_GENERATOR_THREAD 20
 #define GENERATE_COUNT 10000
 
-typedef Looper<int64_t> SumLooper;
-
 class ValueGenerator : public Loop {
 public:
 

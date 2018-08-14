@@ -7,7 +7,6 @@
 
 #include "Loop.h"
 
-
 using namespace std::chrono;
 
 class LoopRunable {
@@ -30,6 +29,7 @@ private:
     int64_t intervalMS;
     time_point<high_resolution_clock> startTime;
     int64_t updateTimes{ 0 };
+
 };
 
 #endif // !__CC_LOOP_RUNABL_H__

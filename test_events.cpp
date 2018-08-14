@@ -9,17 +9,15 @@
 #define MAX_GENERATOR_THREAD 20
 #define GENERATE_COUNT 10000
 
-typedef Looper<int64_t> SumLooper;
-
 class ValueGenerator : public Loop {
 public:
 
-    void before() 
+    void before()
     {
         std::cout << "prepare loop" << std::endl;
     }
 
-    void after() 
+    void after()
     {
         std::cout << "destroy loop" << std::endl;
     }
@@ -33,16 +31,41 @@ public:
 
 int64_t total = 0;
 
+static void printThreadMsg(const char *message)
+{
+    std::cout << "[tid] "<< std::this_thread::get_id() << " " << message << std::endl;
+}
+
+
 int main(int argc, char **argv)
 {
     auto sumLooper = std::make_shared<Looper<int64_t>>(ThreadCategory::ANY_THREAD, std::make_shared<ValueGenerator>(), 1000);
-  
+
     sumLooper->run();
 
-    //sumLooper->ensureStop();
-    sumLooper->stop();
-    
-    sumLooper.reset();
+    printThreadMsg("main thread");
+    sumLooper->dispatch([](){
+        printThreadMsg("dispatch 1");
+    });
+
+    for (int i = 0; i < 10; i++) {
+        sumLooper->dispatch([i]() {
+            char buff[30] = { 0 };
+            snprintf(buff, 30, "dispatch %d", i + 2);
+            printThreadMsg(buff);
+        });
+    }
+
+    sumLooper->on("ddd", [](int64_t &msg) {
+        char buff[30] = { 0 };
+        snprintf(buff, 30, "event %lld", msg);
+        printThreadMsg(buff);
+    });
+
+    int64_t d = 32223;
+    sumLooper->emit("ddd", d);
+
+    sumLooper->ensureStop();
 
     system("pause");
 

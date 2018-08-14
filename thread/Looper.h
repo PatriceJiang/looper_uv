@@ -35,6 +35,8 @@ enum class ThreadCategory {
     NET_THREAD = 1 << 3,
 };
 
+
+
 template<typename LoopEvent>
 class Looper : public std::enable_shared_from_this<Looper<LoopEvent> > {
 public:
@@ -227,38 +229,27 @@ void Looper<LoopEvent>::stop()
 template<typename LoopEvent>
 bool Looper<LoopEvent>::ensureStop()
 {
-
-    /*
-    if (stopped) return true;
-    stop();
-    if (!isCurrentThread())
-    {
-        while (!stopped)
-        {
-            std::this_thread::yield();
-        }
-        return true;
-    }*/
     
     if (!initialized) return false;
     if (stopped) return true;
 
     uv_loop_t *loopPtr = this->loop;
     bool *stpPtr = &stopped;
-    wait([stpPtr, loopPtr]() {
-        //onStop()
+    wait([stpPtr, loopPtr, this]() {
+        //as onStop()
+        this->onNotify();
         *stpPtr = true;
-        //uv_loop_close(loopPtr);
         uv_stop(loopPtr);
     });
+    //flush pending task list
     return true;
 }
 
 template<typename LoopEvent>
 void Looper<LoopEvent>::onStop()
 {
+    onNotify();
     stopped = true;
-    //uv_loop_close(loop);
     uv_stop(loop);
 }
 
