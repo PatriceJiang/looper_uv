@@ -21,26 +21,27 @@
 template<typename T>
 class ThreadSafeQueue {
 public:
-    void safePushBack(T&& ele) { TS_LOCK; data.push_back(ele); }
-    void safePushBack(T& ele) { TS_LOCK; data.push_back(ele);}
+    void pushBack(T&& ele) { TS_LOCK; _data.push_back(ele); }
+    void pushBack(T& ele) { TS_LOCK; _data.push_back(ele);}
 
-    void safePushFront(T &ele) { TS_LOCK; data.push_front(ele); }
-    void safePushFront(T &&ele) { TS_LOCK; data.push_front(ele); }
+    void pushFront(T &ele) { TS_LOCK; _data.push_front(ele); }
+    void pushFront(T &&ele) { TS_LOCK; _data.push_front(ele); }
 
-    void safePopBack() { TS_LOCK; data.pop_back();}
-    T safePopFront() { TS_LOCK; assert(data.size() > 0); T x = data.front(); data.pop_front(); return x; }
+    void popBack() { TS_LOCK; _data.pop_back();}
+    T popFront() { TS_LOCK; assert(_data.size() > 0); T x = _data.front(); _data.pop_front(); return x; }
 
-    T & front() {TS_LOCK;return data.front();}
+    T & front() {TS_LOCK;return _data.front();}
 
-    T & back() {TS_LOCK;return data.back();}
+    T & back() {TS_LOCK;return _data.back();}
 
-    size_t size() { return data.size(); }
+    size_t size() { return _data.size(); }
 
-    std::recursive_mutex& getMutex() { return mtx; }
-    std::list<T> & getQueue() { return data; }
+    std::recursive_mutex& getMutex() { return _mtx; }
+    std::list<T> & getQueue() { return _data; }
+
 private:
-    std::recursive_mutex mtx;
-    std::list<T> data;
+    std::recursive_mutex _mtx;
+    std::list<T> _data;
 };
 
 
@@ -48,54 +49,54 @@ private:
 template<typename K, typename V>
 class ThreadSafeMap {
 public:
-    V & operator[](const K &key) {TS_LOCK;return data[key];}
-    void insert(const K &key, V &value){TS_LOCK;data.insert(std::make_pair(key, value));}
-    void erase(const K &key) {TS_LOCK;data.erase(key);}
-    bool exists(const K &key) { TS_LOCK; return data.find(key) != data.end(); }
+    V & operator[](const K &key) {TS_LOCK;return _data[key];}
+    void insert(const K &key, V &value){TS_LOCK;_data.insert(std::make_pair(key, value));}
+    void erase(const K &key) {TS_LOCK;_data.erase(key);}
+    bool exists(const K &key) { TS_LOCK; return _data.find(key) != _data.end(); }
     V getOrBuild(const K &key, std::function<V(void)> crtFn ) 
     {
         TS_LOCK;
-        if (data.find(key) == data.end()) { //not found
-            data.insert(std::make_pair(key, crtFn()));
+        if (_data.find(key) == _data.end()) { //not found
+            _data.insert(std::make_pair(key, crtFn()));
         }
-        return data[key];
+        return _data[key];
     }
     V &onceInit(const K &key, std::function<void(V&)> initFn)
     {
         TS_LOCK;
-        if (data.find(key) == data.end()) { //do init once
-            initFn(data[key]);
+        if (_data.find(key) == _data.end()) { //do init once
+            initFn(_data[key]);
         }
-        return data[key];
+        return _data[key];
     }
 
-    std::recursive_mutex& getMutex() { return mtx; }
+    std::recursive_mutex& getMutex() { return _mtx; }
 private:
-    std::unordered_map<K, V> data;
-    std::recursive_mutex mtx;
+    std::unordered_map<K, V> _data;
+    std::recursive_mutex _mtx;
 };
 
 template<typename K, typename V> 
 class ThreadSafeMapArray {
 public:
-    void add(const K&key, V &value) { TS_LOCK; data[key].push_back(value); }
-    void clear(const K &key) { TS_LOCK; data[key].clear(); }
-    std::vector<V>& get(const K&key) { TS_LOCK; return data[key]; }
+    void add(const K&key, V &value) { TS_LOCK; _data[key].push_back(value); }
+    void clear(const K &key) { TS_LOCK; _data[key].clear(); }
+    std::vector<V>& get(const K&key) { TS_LOCK; return _data[key]; }
     void forEach(const K &key, std::function<void(V&)> iterFn)
     {
         TS_LOCK;
-        auto &list = data[key];
+        auto &list = _data[key];
         for (auto m = list.begin(); m != list.end(); m++)
         {
             iterFn(*m);
         }
     }
 
-    std::recursive_mutex& getMutex() { return mtx; }
+    std::recursive_mutex& getMutex() { return _mtx; }
 private:
-    std::unordered_map<K, std::vector<V> > data;
+    std::unordered_map<K, std::vector<V> > _data;
     //std::mutex mtx;
-    std::recursive_mutex mtx;
+    std::recursive_mutex _mtx;
 };
 
 #undef TS_LOCK

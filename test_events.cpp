@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     int64_t d = 32223;
     sumLooper->emit("ddd", d);
 
-    sumLooper->ensureStop();
+    sumLooper->syncStop();
 
     system("pause");
 

@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         std::cout << "total value is " << total << ", expect " << (MAX_GENERATOR_THREAD * GENERATE_COUNT) << std::endl;
     });
 
-    sumLooper->ensureStop();
+    sumLooper->syncStop();
 
     
     system("pause");

@@ -5,12 +5,12 @@
 
 class Finalizer {
 public: 
-    Finalizer(std::function<void()> cb) :cb(cb) {}
+    Finalizer(std::function<void()> cb) :_cb(cb) {}
     virtual ~Finalizer(){
         cb();
     }
 private:
-    std::function<void()> cb;
+    std::function<void()> _cb;
 };
 
 #endif

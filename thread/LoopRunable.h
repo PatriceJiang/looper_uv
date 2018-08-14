@@ -20,15 +20,15 @@ public:
 
     void onTimer();
 
-    time_point<high_resolution_clock> expectTime() { return startTime + milliseconds(intervalMS * updateTimes); }
+    time_point<high_resolution_clock> expectTime() { return _startTime + milliseconds(_intervalMS * _updateTimes); }
 
 private:
-    std::shared_ptr<Loop> task;
-    uv_loop_t *loop;
-    uv_timer_t timer;
-    int64_t intervalMS;
-    time_point<high_resolution_clock> startTime;
-    int64_t updateTimes{ 0 };
+    std::shared_ptr<Loop> _task;
+    uv_loop_t *_uvLoop;
+    uv_timer_t _uvTimer;
+    int64_t _intervalMS;
+    time_point<high_resolution_clock> _startTime;
+    int64_t _updateTimes = 0LL;
 
 };
 
