@@ -27,6 +27,8 @@ target_link_libraries(test_concurr ${DEPS})
 add_executable(test_evs test_events.cpp ${LOOP_SRC})
 target_link_libraries(test_evs ${DEPS})
 
+add_executable(test_ticker test_ticker.cpp ${LOOP_SRC})
+target_link_libraries(test_ticker ${DEPS})
 
 
 

@@ -69,6 +69,7 @@ public:
     static void setLocalData(const char *name, void *data);
     static void* getLocalData(const char *name);
 
+    uv_loop_t *getLoop() { return loop };
     
 private:
     void onStop();
