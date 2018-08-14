@@ -1,5 +1,4 @@
-#ifndef __CC_LOOPER_OF_THREAD_H__
-#define __CC_LOOPER_OF_THREAD_H__
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -55,7 +54,7 @@ public:
     void init();
 
     void run();
-    void stop();
+    void asyncStop();
     bool syncStop();
     void join();
     void detach();
@@ -172,7 +171,7 @@ template<typename LoopEvent>
 void Looper<LoopEvent>::emit(const std::string &name, LoopEvent &event)
 {
     assert(_initialized);
-    _pendingEvents.safePushBack(SeqItem<LoopEvent>(genSeq(), name, event));
+    _pendingEvents.pushBack(SeqItem<LoopEvent>(genSeq(), name, event));
     notify();
 }
 
@@ -231,7 +230,7 @@ void Looper<LoopEvent>::onRun()
 }
 
 template<typename LoopEvent>
-void Looper<LoopEvent>::stop()
+void Looper<LoopEvent>::asyncStop()
 {
     _forceStoped = true;
     notify();
@@ -282,7 +281,7 @@ void Looper<LoopEvent>::detach()
 template<typename LoopEvent>
 void Looper<LoopEvent>::dispatch(Looper::DispatchF fn)
 {
-    _pendingFns.safePushBack(SeqItem<DispatchF>(genSeq(), fn));
+    _pendingFns.pushBack(SeqItem<DispatchF>(genSeq(), fn));
     if(!isCurrentThread())
     {
         notify();
@@ -298,7 +297,7 @@ void Looper<LoopEvent>::wait(Looper::DispatchF fn, int timeoutMS)
 {
     if (isCurrentThread()) 
     {
-        _pendingFns.safePushBack(SeqItem<DispatchF>(genSeq(), fn));
+        _pendingFns.pushBack(SeqItem<DispatchF>(genSeq(), fn));
         onNotify();
     }
     else 
@@ -306,7 +305,7 @@ void Looper<LoopEvent>::wait(Looper::DispatchF fn, int timeoutMS)
         std::condition_variable cv;
         std::mutex mtx;
         std::unique_lock<std::mutex> lock(mtx);
-        _pendingFns.safePushBack(SeqItem<DispatchF>(genSeq(), [&cv, &mtx, &fn]() {
+        _pendingFns.pushBack(SeqItem<DispatchF>(genSeq(), [&cv, &mtx, &fn]() {
             std::unique_lock<std::mutex> lock2(mtx);
             fn();
             cv.notify_one();
@@ -340,23 +339,23 @@ void Looper<LoopEvent>::onNotify() {
         auto ev = _pendingEvents.front();
         auto fn = _pendingFns.front();
         if (ev.id < fn.id) {
-            SeqItem<LoopEvent> item = _pendingEvents.safePopFront();
+            SeqItem<LoopEvent> item = _pendingEvents.popFront();
             handleEvent(item.name, item.data);
         }
         else {
-            auto fn = _pendingFns.safePopFront();
+            auto fn = _pendingFns.popFront();
             handleFn(fn.data);
         }
     }
 
     while (_pendingEvents.size() > 0)
     {
-        SeqItem<LoopEvent> item = _pendingEvents.safePopFront();
+        SeqItem<LoopEvent> item = _pendingEvents.popFront();
         handleEvent(item.name, item.data);
     }
     while (_pendingFns.size() > 0)
     {
-        auto fn = _pendingFns.safePopFront();
+        auto fn = _pendingFns.popFront();
         handleFn(fn.data);
     }
     if (_forceStoped) {
@@ -395,6 +394,3 @@ inline void Looper<LoopEvent>::handleFn(const Looper::DispatchF &fn)
 {
     fn();
 }
-
-
-#endif

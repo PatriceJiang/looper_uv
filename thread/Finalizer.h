@@ -1,5 +1,4 @@
-#ifndef __FINALIZER_H__
-#define __FINALIZER_H__
+#pragma once
 
 #include <functional>
 
@@ -7,10 +6,8 @@ class Finalizer {
 public: 
     Finalizer(std::function<void()> cb) :_cb(cb) {}
     virtual ~Finalizer(){
-        cb();
+        _cb();
     }
 private:
     std::function<void()> _cb;
 };
-
-#endif

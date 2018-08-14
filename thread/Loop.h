@@ -1,5 +1,5 @@
-#ifndef __CC_LOOP_H__
-#define __CC_LOOP_H__
+#pragma once
+
 
 class Loop {
 public:
@@ -7,5 +7,3 @@ public:
     virtual void update(int dtMS) = 0;
     virtual void after() {}
 };
-
-#endif

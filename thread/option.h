@@ -1,5 +1,4 @@
-#ifndef __CC_OPTION_H_
-#define __CC_OPTION_H_
+#pragma once
 
 #include <cassert>
 #include <functional>
@@ -57,5 +56,3 @@ Option<T> Option<T>::Some(T value) {
     return Option<T>(value);    
 }
 
-
-#endif

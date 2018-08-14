@@ -1,5 +1,4 @@
-#ifndef __CC_LOOP_RUNABL_H__
-#define __CC_LOOP_RUNABL_H__
+#pragma once
 
 #include <memory>
 #include <chrono>
@@ -31,5 +30,3 @@ private:
     int64_t _updateTimes = 0LL;
 
 };
-
-#endif // !__CC_LOOP_RUNABL_H__

@@ -1,5 +1,4 @@
-#ifndef __THREAD_SAFE_Collection_H__
-#define __THREAD_SAFE_Collection_H__
+#pragma once
 
 #include <list>
 #include <vector>
@@ -11,28 +10,28 @@
 
 #include <cassert>
 
-#ifdef TS_LOCK
-#error "TS_LOCK already defined!"
-#endif // TS_LOCK
+#ifdef _TMP_CC_LOOP_TS_LOCK
+#error "_TMP_CC_LOOP_TS_LOCK already defined!"
+#endif // _TMP_CC_LOOP_TS_LOCK
 
 
-#define TS_LOCK std::lock_guard<std::recursive_mutex> guard(mtx)
+#define _TMP_CC_LOOP_TS_LOCK std::lock_guard<std::recursive_mutex> guard(_mtx)
 
 template<typename T>
 class ThreadSafeQueue {
 public:
-    void pushBack(T&& ele) { TS_LOCK; _data.push_back(ele); }
-    void pushBack(T& ele) { TS_LOCK; _data.push_back(ele);}
+    void pushBack(T&& ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_back(ele); }
+    void pushBack(T& ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_back(ele);}
 
-    void pushFront(T &ele) { TS_LOCK; _data.push_front(ele); }
-    void pushFront(T &&ele) { TS_LOCK; _data.push_front(ele); }
+    void pushFront(T &ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_front(ele); }
+    void pushFront(T &&ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_front(ele); }
 
-    void popBack() { TS_LOCK; _data.pop_back();}
-    T popFront() { TS_LOCK; assert(_data.size() > 0); T x = _data.front(); _data.pop_front(); return x; }
+    void popBack() { _TMP_CC_LOOP_TS_LOCK; _data.pop_back();}
+    T popFront() { _TMP_CC_LOOP_TS_LOCK; assert(_data.size() > 0); T x = _data.front(); _data.pop_front(); return x; }
 
-    T & front() {TS_LOCK;return _data.front();}
+    T & front() {_TMP_CC_LOOP_TS_LOCK;return _data.front();}
 
-    T & back() {TS_LOCK;return _data.back();}
+    T & back() {_TMP_CC_LOOP_TS_LOCK;return _data.back();}
 
     size_t size() { return _data.size(); }
 
@@ -49,13 +48,13 @@ private:
 template<typename K, typename V>
 class ThreadSafeMap {
 public:
-    V & operator[](const K &key) {TS_LOCK;return _data[key];}
-    void insert(const K &key, V &value){TS_LOCK;_data.insert(std::make_pair(key, value));}
-    void erase(const K &key) {TS_LOCK;_data.erase(key);}
-    bool exists(const K &key) { TS_LOCK; return _data.find(key) != _data.end(); }
+    V & operator[](const K &key) {_TMP_CC_LOOP_TS_LOCK;return _data[key];}
+    void insert(const K &key, V &value){_TMP_CC_LOOP_TS_LOCK;_data.insert(std::make_pair(key, value));}
+    void erase(const K &key) {_TMP_CC_LOOP_TS_LOCK;_data.erase(key);}
+    bool exists(const K &key) { _TMP_CC_LOOP_TS_LOCK; return _data.find(key) != _data.end(); }
     V getOrBuild(const K &key, std::function<V(void)> crtFn ) 
     {
-        TS_LOCK;
+        _TMP_CC_LOOP_TS_LOCK;
         if (_data.find(key) == _data.end()) { //not found
             _data.insert(std::make_pair(key, crtFn()));
         }
@@ -63,7 +62,7 @@ public:
     }
     V &onceInit(const K &key, std::function<void(V&)> initFn)
     {
-        TS_LOCK;
+        _TMP_CC_LOOP_TS_LOCK;
         if (_data.find(key) == _data.end()) { //do init once
             initFn(_data[key]);
         }
@@ -79,12 +78,12 @@ private:
 template<typename K, typename V> 
 class ThreadSafeMapArray {
 public:
-    void add(const K&key, V &value) { TS_LOCK; _data[key].push_back(value); }
-    void clear(const K &key) { TS_LOCK; _data[key].clear(); }
-    std::vector<V>& get(const K&key) { TS_LOCK; return _data[key]; }
+    void add(const K&key, V &value) { _TMP_CC_LOOP_TS_LOCK; _data[key].push_back(value); }
+    void clear(const K &key) { _TMP_CC_LOOP_TS_LOCK; _data[key].clear(); }
+    std::vector<V>& get(const K&key) { _TMP_CC_LOOP_TS_LOCK; return _data[key]; }
     void forEach(const K &key, std::function<void(V&)> iterFn)
     {
-        TS_LOCK;
+        _TMP_CC_LOOP_TS_LOCK;
         auto &list = _data[key];
         for (auto m = list.begin(); m != list.end(); m++)
         {
@@ -100,5 +99,3 @@ private:
 };
 
 #undef TS_LOCK
-
-#endif

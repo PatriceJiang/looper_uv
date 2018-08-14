@@ -1,5 +1,4 @@
-#ifndef __SEQ_ITEM_H__
-#define __SEQ_ITEM_H__
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -15,5 +14,3 @@ struct SeqItem{
     std::string name{""};
 };
 
-
-#endif

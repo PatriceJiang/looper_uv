@@ -3,30 +3,30 @@
 #include <cassert>
 
 LoopRunable::LoopRunable(uv_loop_t *loop, std::shared_ptr<Loop> tsk, milliseconds interval) :
-    loop(loop), task(tsk), intervalMS(duration_cast<milliseconds>(interval).count())
+    _uvLoop(loop), _task(tsk), _intervalMS(duration_cast<milliseconds>(interval).count())
 {
-    uv_timer_init(loop, &timer);
-    timer.data = this;
+    uv_timer_init(loop, &_uvTimer);
+    _uvTimer.data = this;
 }
 
 void LoopRunable::beforeRun()
 {
-    task->before();
-    startTime = high_resolution_clock::now();
-    updateTimes = 1;
+    _task->before();
+    _startTime = high_resolution_clock::now();
+    _updateTimes = 1;
     scheduleTaskUpdate();
 }
 
 void LoopRunable::run()
 {
     //schedule update for task
-    uv_run(loop, UV_RUN_DEFAULT);
+    uv_run(_uvLoop, UV_RUN_DEFAULT);
 }
 
 void LoopRunable::afterRun()
 {
-    task->after();
-    uv_loop_close(loop);
+    _task->after();
+    uv_loop_close(_uvLoop);
 }
 
 static void timer_handle(uv_timer_t *timer)
@@ -38,8 +38,8 @@ static void timer_handle(uv_timer_t *timer)
 
 void LoopRunable::onTimer()
 {
-    updateTimes += 1;
-    task->update((int)intervalMS);
+    _updateTimes += 1;
+    _task->update((int)_intervalMS);
 }
 
 void LoopRunable::scheduleTaskUpdate()
@@ -52,5 +52,5 @@ void LoopRunable::scheduleTaskUpdate()
     auto diff = expectTime() - now;
     auto delay = duration_cast<milliseconds>(diff).count();
     assert(delay >= 0);
-    uv_timer_start(&timer, timer_handle, delay, 0);
+    uv_timer_start(&_uvTimer, timer_handle, delay, 0);
 }

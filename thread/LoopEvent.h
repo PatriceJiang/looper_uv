@@ -1,5 +1,4 @@
-#ifndef __LOOP_EVENT_H__
-#define __LOOP_EVENT_H__
+#pragma once
 
 #include <string>
 
@@ -21,5 +20,3 @@ private:
     void *data{ nullptr };
 };
 
-
-#endif
