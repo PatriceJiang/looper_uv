@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-LoopRunable::LoopRunable(uv_loop_t *loop, std::shared_ptr<Loop> tsk, milliseconds interval) :
+LoopRunable::LoopRunable(uv_loop_t *loop, Loop *tsk, milliseconds interval) :
     _uvLoop(loop), _task(tsk), _intervalMS(duration_cast<milliseconds>(interval).count())
 {
     uv_timer_init(loop, &_uvTimer);

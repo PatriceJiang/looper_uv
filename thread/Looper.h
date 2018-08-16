@@ -39,8 +39,10 @@ static void async_handle(uv_async_t *data);
 
 template<typename LoopEvent>
 class Looper : public std::enable_shared_from_this<Looper<LoopEvent> > {
-public:
+private:
+    static ThreadSafeMap<std::string, uv_key_t> _tlsKeyMap;
 
+public:
     typedef std::function<void(LoopEvent&)> EventCF;
     typedef std::function<void()> DispatchF;
 
@@ -48,7 +50,7 @@ public:
     static void setLocalData(const std::string &name, void *data);
     static void* getLocalData(const std::string &name);
 
-    Looper(ThreadCategory cate, std::shared_ptr<Loop> task, int64_t updateMs);
+    Looper(ThreadCategory cate, Loop* task, int64_t updateMs);
     virtual ~Looper();
 
     void init();
@@ -68,7 +70,7 @@ public:
 
     bool isCurrentThread() const;
 
-    uv_loop_t *getUVLoop() { return _uvLoop };
+    uv_loop_t *getUVLoop() { return _uvLoop; };
 
 private:
     void notify();
@@ -76,15 +78,13 @@ private:
     void onStop();
     void onRun();
 
-
     uint64_t genSeq() { return _eventFnSeq.fetch_add(1); }
     void handleEvent(const std::string &name, LoopEvent &ev);
     void handleFn(const DispatchF &fn);
 
     enum ThreadCategory _category;
-    std::shared_ptr<Loop> _loop;
+    Loop *_loop;
     std::shared_ptr<LoopRunable> _task;
-    static ThreadSafeMap<std::string, uv_key_t> _tlsKeyMap;
     ThreadSafeMapArray<std::string, EventCF> _callbackMap;
     ThreadSafeQueue<SeqItem<LoopEvent>> _pendingEvents;
     ThreadSafeQueue<SeqItem<DispatchF>> _pendingFns;
@@ -94,7 +94,7 @@ private:
     bool _isStopped = false;
     bool _initialized = false;
 
-    std::thread *_tid = nullptr;
+    std::thread *_threadId = nullptr;
     int64_t _intervalMs;
 
 public:
@@ -121,25 +121,24 @@ template<typename LoopEvent>
 ThreadSafeMap<std::string, uv_key_t> Looper<LoopEvent>::_tlsKeyMap;
 
 template<typename LoopEvent>
-Looper<LoopEvent>::Looper(ThreadCategory cate, std::shared_ptr<Loop> tsk, int64_t updateMs) :
+Looper<LoopEvent>::Looper(ThreadCategory cate, Loop *tsk, int64_t updateMs) :
     _category(cate), _loop(tsk), _intervalMs(updateMs)
 {}
 
 template<typename LoopEvent>
 Looper<LoopEvent>::~Looper()
 {
+    if (_threadId) {
+        if (_threadId->joinable()) _threadId->join();
+        delete _threadId;
+        _threadId = nullptr;
+    }
 
     if (!_isStopped)
     {
         std::cerr << "Destroy Looper and force close inner thread" << std::endl;
     }
-    syncStop();
-
-    if (_tid) 
-    {
-        delete _tid;
-        _tid = nullptr;
-    }
+    //asyncStop();
 }
 
 
@@ -168,7 +167,7 @@ void Looper<LoopEvent>::off(const std::string &name)
 }
 
 template<typename LoopEvent>
-void Looper<LoopEvent>::emit(const std::string &name, LoopEvent &event)
+void Looper<LoopEvent>::emit(const std::string &name,LoopEvent &event)
 {
     assert(_initialized);
     _pendingEvents.pushBack(SeqItem<LoopEvent>(genSeq(), name, event));
@@ -192,7 +191,7 @@ Looper<LoopEvent> * Looper<LoopEvent>::getCurrentThread()
 template<typename LoopEvent>
 void Looper<LoopEvent>::run()
 {
-    assert(!_tid);
+    assert(!_threadId);
     assert(!_initialized); //call Looper<T>#init() before this
 
     std::condition_variable cv;
@@ -200,7 +199,7 @@ void Looper<LoopEvent>::run()
 
     std::shared_ptr<Looper<LoopEvent> > self = shared_from_this();
 
-    _tid = new std::thread([self, &cv]() {
+    _threadId = new std::thread([self, &cv]() {
         self->init();
         cv.notify_all();
         self->onRun();
@@ -243,13 +242,9 @@ bool Looper<LoopEvent>::syncStop()
     if (!_initialized) return false;
     if (_isStopped) return true;
 
-    uv_loop_t *loopPtr = this->_uvLoop;
-    bool *stpPtr = &_isStopped;
+    _forceStoped = true;
     wait([stpPtr, loopPtr, this]() {
-        //as onStop()
         this->onNotify();
-        *stpPtr = true;
-        uv_stop(loopPtr);
     });
     //flush pending task list
     return true;
@@ -258,8 +253,8 @@ bool Looper<LoopEvent>::syncStop()
 template<typename LoopEvent>
 void Looper<LoopEvent>::onStop()
 {
-    onNotify();
     _isStopped = true;
+    onNotify();
     uv_stop(_uvLoop);
 }
 
@@ -267,15 +262,15 @@ template<typename LoopEvent>
 void Looper<LoopEvent>::join()
 {
     assert(_initialized);
-    assert(_tid->joinable());
-    _tid->join();
+    assert(_threadId->joinable());
+    _threadId->join();
 }
 
 template<typename LoopEvent>
 void Looper<LoopEvent>::detach()
 {
     assert(_initialized);
-    _tid->detach();
+    _threadId->detach();
 }
 
 template<typename LoopEvent>
@@ -325,6 +320,7 @@ void Looper<LoopEvent>::wait(Looper::DispatchF fn, int timeoutMS)
 template<typename LoopEvent>
 void Looper<LoopEvent>::notify()
 {
+    if (_isStopped) return;
     uv_async_send(&_uvAsync);
 }
 
@@ -358,7 +354,7 @@ void Looper<LoopEvent>::onNotify() {
         auto fn = _pendingFns.popFront();
         handleFn(fn.data);
     }
-    if (_forceStoped) {
+    if (_forceStoped && !_isStopped) {
         onStop();
     }
 }

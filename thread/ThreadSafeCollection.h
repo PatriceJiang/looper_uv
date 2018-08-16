@@ -22,8 +22,10 @@ class ThreadSafeQueue {
 public:
     void pushBack(T&& ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_back(ele); }
     void pushBack(T& ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_back(ele);}
+    void pushBack(const T& ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_back(ele); }
 
     void pushFront(T &ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_front(ele); }
+    void pushFront(const T &ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_front(ele); }
     void pushFront(T &&ele) { _TMP_CC_LOOP_TS_LOCK; _data.push_front(ele); }
 
     void popBack() { _TMP_CC_LOOP_TS_LOCK; _data.pop_back();}

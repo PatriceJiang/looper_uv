@@ -10,7 +10,7 @@ using namespace std::chrono;
 
 class LoopRunable {
 public:
-    LoopRunable(uv_loop_t *loop, std::shared_ptr<Loop> tsk, milliseconds interval);
+    LoopRunable(uv_loop_t *loop, Loop *tsk, milliseconds interval);
     void beforeRun();
     void run();
     void afterRun();
@@ -22,7 +22,7 @@ public:
     time_point<high_resolution_clock> expectTime() { return _startTime + milliseconds(_intervalMS * _updateTimes); }
 
 private:
-    std::shared_ptr<Loop> _task;
+    Loop *_task;
     uv_loop_t *_uvLoop;
     uv_timer_t _uvTimer;
     int64_t _intervalMS;
