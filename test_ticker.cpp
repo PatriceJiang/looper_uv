@@ -11,6 +11,7 @@
 #define GENERATE_COUNT 10000
 
 using namespace std::chrono;
+using namespace cocos2d::loop;
 
 class ValueGenerator : public Loop {
 public:

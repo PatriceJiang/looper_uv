@@ -14,7 +14,7 @@
 
 #include "uv.h"
 
-#include "Collection.h"
+#include "Collections.h"
 #include "LoopRunable.h"
 #include "ThreadLoop.h"
 #include "Loop.h"
@@ -91,7 +91,7 @@ namespace cocos2d
             void handleEvent(const std::string &name, LoopEvent &ev);
             void handleFn(const DispatchF &fn);
 
-            enum ThreadCategory _category;
+            ThreadCategory _category;
             Loop *_loop;
             std::shared_ptr<LoopRunable> _task;
             ThreadSafeMapArray<std::string, EventCF> _callbackMap;

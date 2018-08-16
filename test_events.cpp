@@ -9,6 +9,8 @@
 #define MAX_GENERATOR_THREAD 20
 #define GENERATE_COUNT 10000
 
+using namespace cocos2d::loop;
+
 class ValueGenerator : public Loop {
 public:
 
