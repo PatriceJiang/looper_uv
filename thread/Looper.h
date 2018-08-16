@@ -45,12 +45,16 @@ private:
 public:
     typedef std::function<void(LoopEvent&)> EventCF;
     typedef std::function<void()> DispatchF;
+    typedef std::shared_ptr<Looper<LoopEvent> > Ptr;
 
     static Looper *getCurrentThread();
     static void setLocalData(const std::string &name, void *data);
     static void* getLocalData(const std::string &name);
+    static void clearLocalData(const std::string &name);
 
     Looper(ThreadCategory cate, Loop* task, int64_t updateMs);
+    Looper(Loop* task, int64_t updateMs);
+    Looper();
     virtual ~Looper();
 
     void init();
@@ -66,8 +70,9 @@ public:
     void off(const std::string &name);
 
     void dispatch(DispatchF fn);
-    void wait(DispatchF fn, int timeoutMS = 0);
-
+    void wait(DispatchF fn);
+    void wait(DispatchF fn, int timeoutMS);
+    
     bool isCurrentThread() const;
 
     uv_loop_t *getUVLoop() { return _uvLoop; };
@@ -123,6 +128,16 @@ ThreadSafeMap<std::string, uv_key_t> Looper<LoopEvent>::_tlsKeyMap;
 template<typename LoopEvent>
 Looper<LoopEvent>::Looper(ThreadCategory cate, Loop *tsk, int64_t updateMs) :
     _category(cate), _loop(tsk), _intervalMs(updateMs)
+{}
+
+template<typename LoopEvent>
+Looper<LoopEvent>::Looper() :
+    _category(ThreadCategory::ANY_THREAD), _loop(nullptr), _intervalMs(1000)
+{}
+
+template<typename LoopEvent>
+Looper<LoopEvent>::Looper(Loop *tsk, int64_t updateMs) :
+    _category(ThreadCategory::ANY_THREAD), _loop(tsk), _intervalMs(updateMs)
 {}
 
 template<typename LoopEvent>
@@ -218,6 +233,7 @@ void Looper<LoopEvent>::onRun()
     assert(tsk);
     Finalizer defer([tsk]() {
         tsk->afterRun();
+        Looper<LoopEvent>::clearLocalData("___thread");
     });
     tsk->beforeRun();
     
@@ -285,6 +301,12 @@ void Looper<LoopEvent>::dispatch(Looper::DispatchF fn)
     {
         onNotify();
     }
+}
+
+template<typename LoopEvent>
+void Looper<LoopEvent>::wait(Looper::DispatchF fn)
+{
+    wait(fn, 0); //wait forever
 }
 
 template<typename LoopEvent> 
@@ -375,6 +397,12 @@ void *Looper<LoopEvent>::getLocalData(const std::string &name)
         return nullptr;
     }
     return uv_key_get(&_tlsKeyMap[name]);
+}
+
+template<typename LoopEvent>
+void Looper<LoopEvent>::clearLocalData(const std::string &name)
+{
+    _tlsKeyMap.erase(name);
 }
 
 template<typename LoopEvent>

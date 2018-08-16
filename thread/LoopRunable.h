@@ -22,10 +22,10 @@ public:
     time_point<high_resolution_clock> expectTime() { return _startTime + milliseconds(_intervalMS * _updateTimes); }
 
 private:
-    Loop *_task;
-    uv_loop_t *_uvLoop;
+    Loop *_task = nullptr;
+    uv_loop_t *_uvLoop = nullptr;
     uv_timer_t _uvTimer;
-    int64_t _intervalMS;
+    int64_t _intervalMS = 3000LL;
     time_point<high_resolution_clock> _startTime;
     int64_t _updateTimes = 0LL;
 

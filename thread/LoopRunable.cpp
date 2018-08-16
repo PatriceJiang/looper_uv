@@ -11,7 +11,8 @@ LoopRunable::LoopRunable(uv_loop_t *loop, Loop *tsk, milliseconds interval) :
 
 void LoopRunable::beforeRun()
 {
-    _task->before();
+    if(_task)
+        _task->before();
     _startTime = high_resolution_clock::now();
     _updateTimes = 1;
     scheduleTaskUpdate();
@@ -25,7 +26,8 @@ void LoopRunable::run()
 
 void LoopRunable::afterRun()
 {
-    _task->after();
+    if(_task)
+        _task->after();
     uv_loop_close(_uvLoop);
 }
 
@@ -39,7 +41,8 @@ static void timer_handle(uv_timer_t *timer)
 void LoopRunable::onTimer()
 {
     _updateTimes += 1;
-    _task->update((int)_intervalMS);
+    if(_task)
+        _task->update((int)_intervalMS);
 }
 
 void LoopRunable::scheduleTaskUpdate()
