@@ -39,7 +39,8 @@ static void printThreadMsg(const char *message)
 
 int main(int argc, char **argv)
 {
-    auto sumLooper = std::make_shared<Looper<int64_t>>(ThreadCategory::ANY_THREAD, std::make_shared<ValueGenerator>(), 1000);
+    auto loop = std::make_shared<ValueGenerator>();
+    auto sumLooper = std::make_shared<Looper<int64_t>>(ThreadCategory::ANY_THREAD, loop.get(), 1000);
 
     sumLooper->run();
 

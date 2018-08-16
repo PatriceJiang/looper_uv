@@ -243,7 +243,7 @@ bool Looper<LoopEvent>::syncStop()
     if (_isStopped) return true;
 
     _forceStoped = true;
-    wait([stpPtr, loopPtr, this]() {
+    wait([this]() {
         this->onNotify();
     });
     //flush pending task list
