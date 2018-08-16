@@ -2,8 +2,13 @@
 
 #include <uv.h>
 
-
-class ThreadLoop {
-public:
-    static uv_loop_t * getThreadLoop();
-};
+namespace cocos2d
+{
+    namespace loop
+    {
+        class ThreadLoop {
+        public:
+            static uv_loop_t * getThreadLoop();
+        };
+    }
+}
